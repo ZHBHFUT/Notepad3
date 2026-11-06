@@ -27,6 +27,27 @@ Consolas, Arial, and a SHA-256-pinned official Sarasa Term SC archive; the test
 registers/removes its regular/bold fonts for the runner session. The artifact README
 explains extracting the complete portable ZIP and retaining its `lng` directory.
 
+### Publishing an APDL/NASTRAN fork release
+
+- Push a tag `apdl-nastran-v7.YY.Mdd.Build` pointing to the release source commit.
+  The same workflow builds and tests that tagged commit before its separate
+  `release` job (the only job with `contents: write`) publishes a GitHub Release.
+  Branch pushes and manual dispatch only upload Actions artifacts.
+- Tag builds pass `-ReleaseVersion 7.YY.Mdd.Build` to `Build/scripts/Build-APDL.ps1`.
+  This overrides the date/run-number version, including the executable resources,
+  manifest, ZIP filename, and metadata; rerunning a tag keeps its version.
+  Each of the four canonical numeric components must fit a Windows WORD (0-65535).
+  `test/TestApdlReleaseVersion.ps1` checks malformed, noncanonical, and out-of-range
+  inputs before any build tool is invoked; CI runs it before building.
+- The release job checks tag/version/source-commit agreement and both SHA-256
+  records, then uploads the complete ZIP, loose EXE, checksums, metadata, and
+  package instructions. It creates a draft with all assets before publishing it
+  as latest. Release notes come from `Build/Docs/RELEASE-APDL-NASTRAN.md`.
+- If publication fails after draft creation, inspect that draft before retrying;
+  `gh release create` deliberately refuses an existing release instead of silently
+  replacing its assets. Windows GUI lexer acceptance remains a manual check using
+  the packaged fixtures; the automated UI test covers NASTRAN column guides.
+
 ### Invoking MSBuild from PowerShell
 
 `msbuild` is not on the PowerShell PATH. Locate it with `vswhere.exe`:

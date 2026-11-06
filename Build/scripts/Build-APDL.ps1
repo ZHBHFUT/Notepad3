@@ -1,11 +1,25 @@
 # Build and package the APDL/NASTRAN-enabled Windows x64 editor with the installed MSVC toolset.
-param([int]$BuildNumber = 1)
+param(
+    [ValidateRange(0, 65535)][int]$BuildNumber = 1,
+    [ValidatePattern('^7\.[0-9]+\.[0-9]+\.[0-9]+$')][string]$ReleaseVersion
+)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-if (-not $IsWindows) { throw 'This build requires Windows and Visual Studio C++ tools.' }
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 Push-Location $repo
 try {
+    if ($ReleaseVersion) {
+        $parsedVersion = [version]$ReleaseVersion
+        if ($parsedVersion.ToString() -cne $ReleaseVersion -or
+            $parsedVersion.Minor -gt 65535 -or $parsedVersion.Build -gt 65535 -or
+            $parsedVersion.Revision -gt 65535) { throw 'ReleaseVersion must be a canonical four-part Windows version (each part 0-65535).' }
+        $version = $ReleaseVersion
+    } else {
+        $now = Get-Date
+        $version = "7.$($now.ToString('yy')).$($now.ToString('Mdd')).$BuildNumber"
+    }
+    $versionParts = $version.Split('.')
+    if (-not $IsWindows) { throw 'This build requires Windows and Visual Studio C++ tools.' }
     $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
     $msbuild = & $vswhere -latest -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' |
         Select-Object -First 1
@@ -14,13 +28,11 @@ try {
     & $nuget restore Notepad3.sln -NonInteractive
     if ($LASTEXITCODE) { throw "NuGet restore failed: $LASTEXITCODE" }
 
-    $now = Get-Date
-    $version = "7.$($now.ToString('yy')).$($now.ToString('Mdd')).$BuildNumber"
     $commit = (& git rev-parse HEAD).Trim()
     if ($LASTEXITCODE) { throw 'Could not identify the source commit.' }
     $substitutions = @{
-        '$APPNAME$' = 'Notepad3'; '$MAJOR$' = '7'; '$MINOR$' = $now.ToString('yy')
-        '$MAINT$' = $now.ToString('Mdd'); '$BUILD$' = "$BuildNumber"
+        '$APPNAME$' = 'Notepad3'; '$MAJOR$' = $versionParts[0]; '$MINOR$' = $versionParts[1]
+        '$MAINT$' = $versionParts[2]; '$BUILD$' = $versionParts[3]
         '$SCIVER$' = (Get-Content scintilla/version.txt -Raw).Trim()
         '$LXIVER$' = (Get-Content lexilla/version.txt -Raw).Trim()
         '$PCRE2VER$' = (Get-Content scintilla/pcre2/version.txt -Raw).Trim()
