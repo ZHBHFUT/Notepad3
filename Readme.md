@@ -3,13 +3,27 @@
 **A fast, lightweight, Scintilla-based text editor for Windows**
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg?style=flat-square)](https://opensource.org/licenses/BSD-3-Clause)
-[![CI](https://img.shields.io/github/actions/workflow/status/rizonesoft/Notepad3/build.yml?style=flat-square&label=CI)](https://github.com/rizonesoft/Notepad3/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/rizonesoft/Notepad3?style=flat-square&label=Release&color=0e7490)](https://rizonesoft.com/downloads/notepad3/)
+[![CI](https://img.shields.io/github/actions/workflow/status/ZHBHFUT/Notepad3/apdl-windows.yml?style=flat-square&label=APDL%20%2F%20NASTRAN%20CI)](https://github.com/ZHBHFUT/Notepad3/actions/workflows/apdl-windows.yml)
+[![Release](https://img.shields.io/github/v/release/ZHBHFUT/Notepad3?style=flat-square&label=Fork%20Release&color=0e7490)](https://github.com/ZHBHFUT/Notepad3/releases/latest)
 [![Nightly](https://img.shields.io/github/v/release/rizonesoft/Notepad3?include_prereleases&style=flat-square&label=Nightly&color=6e40c9)](https://github.com/rizonesoft/Notepad3/releases)
 
 [Website](https://rizonesoft.com/downloads/notepad3/) · [Downloads](https://github.com/rizonesoft/Notepad3/releases) · [Documentation](https://rizonesoft.com/documents/notepad3/) · [FAQ](readme/faq/FAQ.md) · [Changelog](https://rizonesoft.com/downloads/notepad3/update) · [Sponsor](https://github.com/sponsors/rizonesoft)
 
 ---
+
+## APDL / NASTRAN fork release
+
+This fork adds **ANSYS APDL** (`.apdl`, `.mac`, `.cdb`) and **NASTRAN** (`.bdf`, `.nas`)
+syntax highlighting, completion, and folding, including CDB data blocks and
+NASTRAN fixed/free fields and continuations. NASTRAN also has 8/16-character
+column-guide presets with column 72/80 boundaries.
+
+**[Download the APDL / NASTRAN Windows x64 release](https://github.com/ZHBHFUT/Notepad3/releases/latest).**
+Extract the complete portable ZIP and keep its `lng` directory for Chinese and
+other translated menus. See the [package instructions](Build/Docs/README-APDL-NASTRAN.txt)
+and [release notes](Build/Docs/RELEASE-APDL-NASTRAN.md).
+
+The upstream project and its download channels are described below.
 
 Notepad3 is a free, open-source text editor with syntax highlighting for Windows. Built on the [Scintilla](https://www.scintilla.org/) editing component and [Lexilla](https://www.scintilla.org/Lexilla.html) lexer library, it has a small memory footprint while being powerful enough for professional programming and everyday text editing.
 

@@ -3,6 +3,7 @@ name: APDL and NASTRAN Windows x64
 on:
   push:
     branches: ['codex/apdl-*']
+    tags: ['apdl-nastran-v*']
   workflow_dispatch:
 
 permissions:
@@ -18,9 +19,21 @@ jobs:
           fetch-depth: 0
       - uses: microsoft/setup-msbuild@v2
       - uses: NuGet/setup-nuget@v2
+      - name: Check release version validation
+        shell: pwsh
+        run: ./test/TestApdlReleaseVersion.ps1
       - name: Build Windows x64 Release and package
         shell: pwsh
-        run: ./Build/scripts/Build-APDL.ps1 -BuildNumber ${{ github.run_number }}
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if ($env:REF_TYPE -eq 'tag') {
+            if ($env:REF_NAME -notmatch '^apdl-nastran-v(7\.[0-9]+\.[0-9]+\.[0-9]+)$') { throw 'Invalid APDL/NASTRAN release tag.' }
+            ./Build/scripts/Build-APDL.ps1 -ReleaseVersion $Matches[1]
+          } else {
+            ./Build/scripts/Build-APDL.ps1 -BuildNumber ${{ github.run_number }}
+          }
       - name: Validate documentation
         shell: pwsh
         run: ./Build/scripts/Test-Docs.ps1
@@ -49,3 +62,48 @@ jobs:
             Bin/APDL-artifacts/build-info.json
             Bin/APDL-artifacts/SHA256SUMS.txt
             Bin/APDL-artifacts/README-APDL-NASTRAN.txt
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/apdl-nastran-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Notepad3-APDL-NASTRAN-x64
+          path: release-assets
+      - name: Verify release assets
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          $info = Get-Content release-assets/build-info.json -Raw | ConvertFrom-Json
+          if ($env:RELEASE_TAG -cne "apdl-nastran-v$($info.version)" -or
+              $info.commit -cne $env:SOURCE_COMMIT -or $info.architecture -ne 'x64') { throw 'Release provenance mismatch.' }
+          $zipName = "Notepad3-APDL-NASTRAN-$($info.version)-x64.zip"
+          $hashes = @(Get-Content release-assets/SHA256SUMS.txt)
+          if ($hashes.Count -ne 2) { throw 'Expected portable ZIP and EXE checksums.' }
+          $expectedNames = @($zipName, 'Notepad3.exe')
+          foreach ($line in $hashes) {
+            if ($line -cnotmatch '^([a-f0-9]{64})  (.+)$') { throw 'Invalid checksum record.' }
+            $hash, $name = $Matches[1], $Matches[2]
+            if ($name -cnotin $expectedNames) { throw 'Unexpected checksum filename.' }
+            $expectedNames = @($expectedNames | Where-Object { $_ -cne $name })
+            if ((Get-FileHash (Join-Path release-assets $name) -Algorithm SHA256).Hash.ToLowerInvariant() -cne $hash) { throw "Checksum mismatch: $name" }
+          }
+          if ($expectedNames.Count) { throw 'Missing release checksum.' }
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" release-assets/* \
+            --verify-tag --draft \
+            --title "Notepad3 APDL / NASTRAN ${RELEASE_TAG#apdl-nastran-v} (Windows x64)" \
+            --notes-file Build/Docs/RELEASE-APDL-NASTRAN.md
+          gh release edit "$RELEASE_TAG" --draft=false --latest
