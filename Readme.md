@@ -36,6 +36,16 @@ Notepad3 is a free, open-source text editor with syntax highlighting for Windows
 
 ## Features
 
+### APDL / NASTRAN
+
+**ANSYS APDL** — syntax highlighting and CDB data-block folding, including RLBLOCK and NBLOCK.
+
+![ANSYS APDL syntax highlighting and CDB block folding](docs/images/apdl-syntax-folding.png)
+
+**NASTRAN** — syntax highlighting, code folding, and fixed-field column guides.
+
+![NASTRAN syntax highlighting, folding, and fixed-field column guides](docs/images/nastran-column-guides.png)
+
 ### Editing
 - **Code folding** with toggle-all support
 - **Bookmarks** for quick navigation within files
